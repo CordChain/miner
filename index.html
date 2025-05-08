@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CordChain Miner Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Animations */
+    @keyframes pulse-hash {0%,100%{opacity:.35}50%{opacity:1}}
+    @keyframes spin {to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#0b1120] via-[#101629] to-[#1a253b] text-gray-100 flex items-center justify-center p-4 select-none">
+  <main class="w-full max-w-2xl bg-gray-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 space-y-10 relative overflow-hidden">
+    <!-- Decorative blurred rings -->
+    <div class="absolute -top-20 -left-32 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl"></div>
+
+    <!-- Header -->
+    <header class="text-center space-y-2">
+      <h1 class="text-3xl font-extrabold tracking-wide">⛏️ CordChain Miner</h1>
+      <p class="text-sm opacity-75 max-w-prose mx-auto">
+        Your browser is part of <span class="text-emerald-400 font-semibold">CordChain</span>'s decentralised
+        network. Every hash you calculate helps advance the next public block. <br class="hidden sm:block">All
+        work is done <strong>client-side</strong>; only the winning proof is sent back to Discord.
+      </p>
+    </header>
+
+    <!-- Work package overview -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+      <div class="bg-gray-700/40 p-3 rounded-xl">
+        <div class="font-semibold text-emerald-300">Work ID</div>
+        <div id="workId" class="truncate">–</div>
+      </div>
+      <div class="bg-gray-700/40 p-3 rounded-xl col-span-2 sm:col-span-1">
+        <div class="font-semibold text-emerald-300">Prev Hash</div>
+        <div id="prevHash" class="truncate">–</div>
+      </div>
+      <div class="bg-gray-700/40 p-3 rounded-xl col-span-2 sm:col-span-1">
+        <div class="font-semibold text-emerald-300">Merkle</div>
+        <div id="merkleRoot" class="truncate">–</div>
+      </div>
+      <div class="bg-gray-700/40 p-3 rounded-xl">
+        <div class="font-semibold text-emerald-300">Difficulty</div>
+        <div id="difficulty" class="truncate">–</div>
+      </div>
+    </section>
+
+    <!-- Live dashboard -->
+    <section id="stats" class="hidden">
+      <h2 class="text-center text-sm uppercase tracking-wider mb-4 opacity-80">Live Performance</h2>
+      <div class="grid grid-cols-3 gap-4 text-center text-sm">
+        <div class="bg-gray-700/30 rounded-xl p-4">
+          <div class="text-xs opacity-70">Nonce</div>
+          <div id="nonce" class="text-lg font-mono">0</div>
+        </div>
+        <div class="bg-gray-700/30 rounded-xl p-4">
+          <div class="text-xs opacity-70">Hash / s</div>
+          <div id="rate" class="text-lg font-mono">0</div>
+        </div>
+        <div class="bg-gray-700/30 rounded-xl p-4">
+          <div class="text-xs opacity-70">Current Hash</div>
+          <div id="hash" class="text-[10px] md:text-xs font-mono break-all animate-[pulse-hash_2s_infinite]">–</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detailed stats (collapsible) -->
+    <details id="detailStats" class="bg-gray-700/30 rounded-xl p-4">
+      <summary class="cursor-pointer outline-none select-none font-semibold text-sm">ℹ️ Detailed Stats</summary>
+      <div class="grid sm:grid-cols-2 gap-4 mt-4 text-sm">
+        <div>
+          <div class="text-xs opacity-70">Elapsed Time (s)</div>
+          <div id="elapsed" class="font-mono">0</div>
+        </div>
+        <div>
+          <div class="text-xs opacity-70">Total Attempts</div>
+          <div id="attempts" class="font-mono">0</div>
+        </div>
+        <div class="sm:col-span-2">
+          <div class="text-xs opacity-70">Best Hash So Far</div>
+          <div id="best" class="font-mono break-all">–</div>
+        </div>
+        <div class="sm:col-span-2">
+          <div class="text-xs opacity-70">Target (hex)</div>
+          <div id="target" class="font-mono break-all"></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- CTA / status area -->
+    <section class="flex flex-col items-center gap-4">
+      <button id="btnToggle" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition px-6 py-3 rounded-2xl font-semibold shadow-lg">
+        <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M14.752 11.168l-6.518-3.759A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z"/>
+        </svg>
+        <span id="btnLabel">Start Mining</span>
+      </button>
+
+      <section id="solution" class="hidden w-full">
+        <h3 class="text-center text-green-400 font-semibold mb-3">🎉 Block Solved – share your proof!</h3>
+        <textarea id="payload" readonly class="w-full h-28 bg-gray-700/60 p-3 rounded text-xs font-mono"></textarea>
+        <button id="btnSend" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl px-4 py-3 font-medium shadow">
+          Submit Proof to Discord
+        </button>
+      </section>
+    </section>
+
+    <footer class="text-center text-xs opacity-50 pt-8 border-t border-gray-700/40">
+      Made with ❤️ for CordChain miners · Source code available · Runs 100 % in your browser
+    </footer>
+  </main>
+
+<script type="module">
+// ╭──────────────────────────────────────────────────────────╮
+// │  CordChain Miner – fully client-side, auditable, fun!   │
+// ╰──────────────────────────────────────────────────────────╯
+const $ = id => document.getElementById(id);
+const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
+      icon = $("iconPlay"), label = $("btnLabel");
+
+// Activity secrets → injected by the Discord bot
+const sec = window.DiscordNative?.activitySecrets ?? {};
+const work = {
+  workId:     sec.workId      || "demo-work",
+  prevHash:   sec.prevHash    || "0".repeat(64),
+  merkleRoot: sec.merkleRoot  || "4bf717b19b6e8b9f0dd6bf…",
+  timestamp:  sec.timestamp   || Date.now(),
+  difficulty: sec.difficulty  || "0000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  submitUrl:  sec.submitUrl   || "https://example.com/submit"
+};
+
+// Fill overview cards
+$("workId").textContent     = work.workId;
+$("prevHash").textContent   = work.prevHash.slice(0,16)   + "…";
+$("merkleRoot").textContent = work.merkleRoot.slice(0,16) + "…";
+$("difficulty").textContent = work.difficulty.slice(0,12) + "…";
+$("target").textContent     = work.difficulty;             // detailed stats
+
+// Mining state
+const TARGET   = BigInt("0x" + work.difficulty);
+let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
+
+// Quick SHA-256 → hex helper
+async function sha256Hex(str) {
+  const buf = new TextEncoder().encode(str);
+  const res = await crypto.subtle.digest("SHA-256", buf);
+  return [...new Uint8Array(res)]
+         .map(b => b.toString(16).padStart(2, "0"))
+         .join("");
+}
+
+// Toggle mining
+btn.addEventListener("click", () => mining ? stop() : start());
+
+function start() {
+  mining   = true;
+  nonce    = 0n;
+  attempts = 0;
+  bestHash = "";
+  startTime = performance.now();
+  label.textContent = "Stop Mining";
+  icon.setAttribute("d", "M6 6h12v12H6z");       // ▮▮ stop icon
+  stats.classList.remove("hidden");
+  solBox.classList.add("hidden");
+  updateUI();                                    // reset UI immediately
+  mineLoop();
+}
+
+function stop() {
+  mining = false;
+  label.textContent = "Start Mining";
+  icon.setAttribute("d",
+    "M14.752 11.168L8.234 7.409A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z"); // ▶
+}
+
+async function mineLoop() {
+  if (!mining) return;
+
+  for (let i = 0; i < 1500; i++) {
+    const hash = await sha256Hex(
+      work.prevHash + work.merkleRoot + work.timestamp + nonce
+    );
+    attempts++;
+    if (BigInt("0x" + hash) < TARGET) {
+      bestHash = hash;
+      found();
+      return;
+    }
+    nonce++;
+  }
+  updateUI();
+  requestAnimationFrame(mineLoop);
+}
+
+function updateUI() {
+  $("nonce").textContent    = nonce;
+  const elapsed = (performance.now() - startTime) / 1000;
+  $("rate").textContent     = elapsed ? Math.floor(attempts / elapsed) : 0;
+  $("hash").textContent     = bestHash ? bestHash.slice(0,16)+"…" : "–";
+
+  // detailed panel
+  $("elapsed").textContent  = elapsed.toFixed(1);
+  $("attempts").textContent = attempts;
+  $("best").textContent     = bestHash || "–";
+}
+
+function found() {
+  mining = false;
+  label.textContent = "Start Mining";
+  icon.style.animation = "spin 6s linear infinite";
+  stats.classList.add("hidden");
+  solBox.classList.remove("hidden");
+  updateUI();                                   // final UI refresh
+
+  const payload = {
+    workId: work.workId,
+    nonce:  nonce.toString(),
+    hash:   bestHash
+  };
+  $("payload").value = JSON.stringify(payload, null, 2);
+}
+
+$("btnSend").addEventListener("click", async () => {
+  try {
+    await fetch(work.submitUrl, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body:    $("payload").value
+    });
+    $("btnSend").textContent = "✅ Proof Submitted";
+    $("btnSend").disabled = true;
+  } catch {
+    $("btnSend").textContent = "❌ Retry";
+  }
+});
+</script>
+</body>
+</html>

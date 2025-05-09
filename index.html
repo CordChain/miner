@@ -123,6 +123,10 @@ const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
 
 // Activity secrets → injected by the Discord bot
 const sec = window.DiscordNative?.activitySecrets ?? {};
+//DEBUG
+console.log('window',window)
+console.log('window.DiscordNative',window.DiscordNative)
+
 const work = {
   workId:     sec.workId      || "demo-work",
   prevHash:   sec.prevHash    || "0".repeat(64),

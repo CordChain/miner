@@ -115,14 +115,15 @@
   </main>
 
 <script type="module">
-import { DiscordSDK } from './embedded-app-sdk.js';
+    import { DiscordSDK } from "./embedded-app-sdk.js";
+    const discordSdk = new DiscordSDK('1363561090130379043');
 
-async function setup() {
-  await DiscordSDK.ready();
-  console.log("✅ SDK Ready");
-}
+    async function setup() {
+      await discordSdk.ready();
+      console.log("✅ SDK Ready");
+    }
 
-setup();
+    setup();
 
 // ╭──────────────────────────────────────────────────────────╮
 // │  CordChain Miner – fully client-side, auditable, fun!   │

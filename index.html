@@ -118,6 +118,10 @@
 import { DiscordSDK } from "./embedded-app-sdk.js";
 const discordSdk = new DiscordSDK('1363561090130379043');
 
+let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
+const $ = id => document.getElementById(id);
+  const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
+        icon = $("iconPlay"), label = $("btnLabel");
 
 async function miner() {
 
@@ -141,9 +145,6 @@ const channel = await discordSdk.commands.getChannel({
   // ╭──────────────────────────────────────────────────────────╮
   // │  CordChain Miner – fully client-side, auditable, fun!   │
   // ╰──────────────────────────────────────────────────────────╯
-  const $ = id => document.getElementById(id);
-  const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
-        icon = $("iconPlay"), label = $("btnLabel");
 
   // Activity secrets → injected by the Discord bot
   const sec = window.DiscordNative?.activitySecrets ?? {};
@@ -169,7 +170,9 @@ const channel = await discordSdk.commands.getChannel({
 
   // Mining state
   const TARGET   = BigInt("0x" + work.difficulty);
-  let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
+
+  // Toggle mining
+  btn.addEventListener("click", () => mining ? stop() : start());
 
 }
 
@@ -191,9 +194,6 @@ async function sha256Hex(str) {
          .map(b => b.toString(16).padStart(2, "0"))
          .join("");
 }
-
-// Toggle mining
-btn.addEventListener("click", () => mining ? stop() : start());
 
 function start() {
   mining   = true;

@@ -115,48 +115,60 @@
   </main>
 
 <script type="module">
-    import { DiscordSDK } from "./embedded-app-sdk.js";
-    const discordSdk = new DiscordSDK('1363561090130379043');
+import { DiscordSDK } from "./embedded-app-sdk.js";
+const discordSdk = new DiscordSDK('1363561090130379043');
 
-    async function setup() {
-      await discordSdk.ready();
-      console.log("✅ SDK Ready");
-    }
 
-    setup();
+async function miner() {
 
-// ╭──────────────────────────────────────────────────────────╮
-// │  CordChain Miner – fully client-side, auditable, fun!   │
-// ╰──────────────────────────────────────────────────────────╯
-const $ = id => document.getElementById(id);
-const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
-      icon = $("iconPlay"), label = $("btnLabel");
+  const channel = await discordSdk.commands.getChannel({
+    channel_id: discordSdk.channelId,
+  });
+ console.log('📦 Channel:', channel);
+  // ╭──────────────────────────────────────────────────────────╮
+  // │  CordChain Miner – fully client-side, auditable, fun!   │
+  // ╰──────────────────────────────────────────────────────────╯
+  const $ = id => document.getElementById(id);
+  const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
+        icon = $("iconPlay"), label = $("btnLabel");
 
-// Activity secrets → injected by the Discord bot
-const sec = window.DiscordNative?.activitySecrets ?? {};
-//DEBUG
-console.log('window',window)
-console.log('window.DiscordNative',window.DiscordNative)
+  // Activity secrets → injected by the Discord bot
+  const sec = window.DiscordNative?.activitySecrets ?? {};
+  //DEBUG
+  console.log('window',window)
+  console.log('window.DiscordNative',window.DiscordNative)
 
-const work = {
-  workId:     sec.workId      || "demo-work",
-  prevHash:   sec.prevHash    || "0".repeat(64),
-  merkleRoot: sec.merkleRoot  || "4bf717b19b6e8b9f0dd6bf…",
-  timestamp:  sec.timestamp   || Date.now(),
-  difficulty: sec.difficulty  || "0000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-  submitUrl:  sec.submitUrl   || "https://example.com/submit"
-};
+  const work = {
+    workId:     sec.workId      || "demo-work",
+    prevHash:   sec.prevHash    || "0".repeat(64),
+    merkleRoot: sec.merkleRoot  || "4bf717b19b6e8b9f0dd6bf…",
+    timestamp:  sec.timestamp   || Date.now(),
+    difficulty: sec.difficulty  || "0000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    submitUrl:  sec.submitUrl   || "https://example.com/submit"
+  };
 
-// Fill overview cards
-$("workId").textContent     = work.workId;
-$("prevHash").textContent   = work.prevHash.slice(0,16)   + "…";
-$("merkleRoot").textContent = work.merkleRoot.slice(0,16) + "…";
-$("difficulty").textContent = work.difficulty.slice(0,12) + "…";
-$("target").textContent     = work.difficulty;             // detailed stats
+  // Fill overview cards
+  $("workId").textContent     = work.workId;
+  $("prevHash").textContent   = work.prevHash.slice(0,16)   + "…";
+  $("merkleRoot").textContent = work.merkleRoot.slice(0,16) + "…";
+  $("difficulty").textContent = work.difficulty.slice(0,12) + "…";
+  $("target").textContent     = work.difficulty;             // detailed stats
 
-// Mining state
-const TARGET   = BigInt("0x" + work.difficulty);
-let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
+  // Mining state
+  const TARGET   = BigInt("0x" + work.difficulty);
+  let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
+
+}
+
+async function setup() {
+  await discordSdk.ready();
+  console.log("✅ SDK Ready");
+  miner();
+}
+
+setup();
+
+
 
 // Quick SHA-256 → hex helper
 async function sha256Hex(str) {

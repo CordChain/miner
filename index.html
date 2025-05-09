@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CordChain Miner Dashboard</title>
   <script src="./tailwindcss.js"></script>
+  
   <style>
     /* Animations */
     @keyframes pulse-hash {0%,100%{opacity:.35}50%{opacity:1}}
@@ -114,6 +115,15 @@
   </main>
 
 <script type="module">
+import { DiscordSDK } from './embedded-app-sdk.js';
+
+async function setup() {
+  await DiscordSDK.ready();
+  console.log("✅ SDK Ready");
+}
+
+setup();
+
 // ╭──────────────────────────────────────────────────────────╮
 // │  CordChain Miner – fully client-side, auditable, fun!   │
 // ╰──────────────────────────────────────────────────────────╯

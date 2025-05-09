@@ -121,9 +121,19 @@ const discordSdk = new DiscordSDK('1363561090130379043');
 
 async function miner() {
 
-  const channel = await discordSdk.commands.getChannel({
-    channel_id: discordSdk.channelId,
-  });
+ 
+await discordSdk.commands.authorize({
+  client_id: '1363561090130379043',
+  response_type: 'code',
+  prompt: 'none',
+  scope: ['identify', 'guilds'],
+});
+
+
+const channel = await discordSdk.commands.getChannel({
+  channel_id: discordSdk.channelId,
+});
+
  console.log('📦 Channel:', channel);
   // ╭──────────────────────────────────────────────────────────╮
   // │  CordChain Miner – fully client-side, auditable, fun!   │

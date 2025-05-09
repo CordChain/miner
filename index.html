@@ -178,7 +178,7 @@ const channel = await discordSdk.commands.getChannel({
 
 async function setup() {
   await discordSdk.ready();
-  console.log("✅ SDK Ready",window.DiscordNative?.accessToken);
+  console.log("✅ SDK Ready",window.DiscordNative);
   
   miner();
 }

@@ -129,6 +129,9 @@ await discordSdk.commands.authorize({
   scope: ['identify', 'guilds'],
 });
 
+await discordSdk.commands.authenticate({
+  access_token: 'dummy' 
+});
 
 const channel = await discordSdk.commands.getChannel({
   channel_id: discordSdk.channelId,

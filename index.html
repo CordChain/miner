@@ -126,16 +126,16 @@ const $ = id => document.getElementById(id);
 async function miner() {
 
  
-await discordSdk.commands.authorize({
-  client_id: '1363561090130379043',
-  response_type: 'code',
-  prompt: 'none',
-  scope: ['identify', 'guilds'],
-});
+// await discordSdk.commands.authorize({
+//   client_id: '1363561090130379043',
+//   response_type: 'code',
+//   prompt: 'none',
+//   scope: ['identify', 'guilds'],
+// });
 
-await discordSdk.commands.authenticate({
-  access_token: 'dummy' 
-});
+// await discordSdk.commands.authenticate({
+//   access_token: 'dummy' 
+// });
 
 const channel = await discordSdk.commands.getChannel({
   channel_id: discordSdk.channelId,
@@ -178,7 +178,7 @@ const channel = await discordSdk.commands.getChannel({
 
 async function setup() {
   await discordSdk.ready();
-  console.log("✅ SDK Ready",window.DiscordNative);
+  console.log("✅ SDK Ready",window);
   
   miner();
 }

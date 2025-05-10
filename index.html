@@ -147,11 +147,15 @@
   // });
 
   /* --- načítanie #mempool --- */
-  const apiURL = `/.proxy/https/discord.com/api/v10/channels/${sdk.channelId}/messages?limit=1`;
-  const [msg] = await (await fetch(apiURL, {
-    headers: { Authorization: `Bearer ${tokenInfo.access_token}` }
-  })).json();
+  const apiURL =
+  `/.proxy/discord-api/channels/${sdk.channelId}/messages?limit=1`;
 
+const res = await fetch(apiURL, {
+  headers: { Authorization: `Bearer ${tokenInfo.access_token}` }
+});
+if (!res.ok) throw new Error(`Discord API returned ${res.status}`);
+
+const [msg] = await res.json();
 
   if (!msg.attachments?.length)
     throw new Error("No work found in mempool.");

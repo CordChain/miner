@@ -134,7 +134,7 @@ const auth = await discordSdk.commands.authorize({
 });
 console.log('AUTH:', auth);
 
-const tokenRes = await fetch('http://185.206.148.147:8046/oauth2-exchange', {
+const tokenRes = await fetch('https://1363561090130379043.discordsays.com/.proxy/oauth2-exchange', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ code: auth.code })

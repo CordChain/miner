@@ -125,7 +125,13 @@
     scope        : ["identify","guilds","messages.read"]     // stačí na čítanie kanála
   });
   console.log("ℹ️  got OAUTH code:", code);
-  const proxyURL = `/.proxy/webhook-proxy/api/webhook?code=${encodeURIComponent(code)}`;
+  // const proxyURL = `/.proxy/webhook-proxy/api/webhook?code=${encodeURIComponent(code)}`;
+
+  const proxyURL =
+  `/.proxy/webhook-proxy/api/webhook?` +
+  `code=${encodeURIComponent(code)}` +
+  `&channel=${encodeURIComponent(sdk.channelId)}`;
+
 
  console.log('proxyURL',proxyURL)
   const {access_token, work} = await fetch(proxyURL).then(r => r.json());

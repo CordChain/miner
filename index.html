@@ -122,34 +122,28 @@
   const { code } = await sdk.commands.authorize({
     client_id    : APP_ID,
     response_type: "code",
-    scope        : ["identify","messages.read"]     // stačí na čítanie kanála
+    scope        : ["identify","guilds","messages.read"]     // stačí na čítanie kanála
   });
   console.log("ℹ️  got OAUTH code:", code);
-
-  // const proxyURL =
-  // `https://${APP_ID}.discordsays.com/.proxy/https` +
-  // `/webhook-proxy-discord-bot.vercel.app/api/webhook` +
-  // `?code=${encodeURIComponent(code)}`;
-  // const proxyURL =
-  //  `https://${APP_ID}.discordsays.com/.proxy/https` +
-  //  `/webhook-proxy-discord-bot.vercel.app/api/webhook` +
-  //  `?code=${encodeURIComponent(code)}`;
   const proxyURL = `/.proxy/webhook-proxy/api/webhook?code=${encodeURIComponent(code)}`;
 
-  /* 2️⃣  výmena cez DiscordSays proxy – musí to byť GET, takže ?code=… */
-  // const proxyURL =
-  //   `https://${APP_ID}.discordsays.com/.proxy/webhook-proxy-discord-bot.vercel.app/api/webhook?code=${encodeURIComponent(code)}`;
-  console.log('proxyURL',proxyURL)
+ console.log('proxyURL',proxyURL)
   const tokenInfo = await fetch(proxyURL).then(r => r.json());
   if (!tokenInfo.access_token) throw new Error("OAuth exchange failed!");
   
-  await sdk.commands.authenticate(tokenInfo);       // {access_token, token_type}
+  await sdk.commands.authenticate({
+    access_token: tokenInfo.access_token    
+  });
+
+  // await sdk.commands.authenticate(tokenInfo);       // {access_token, token_type}
   
   /* 3️⃣  načítame poslednú správu z aktuálneho #mempool */
-  const ch  = await sdk.commands.getChannel({ channel_id: sdk.channelId });
+  // const ch  = await sdk.commands.getChannel({ channel_id: sdk.channelId });
   const msg = await sdk.commands.getMessage({
     channel_id: sdk.channelId,
-    message_id: ch.last_message_id
+    limit: 1
+
+    // message_id: ch.last_message_id
   });
   if (!msg.attachments?.length)
     throw new Error("No work found in mempool.");

@@ -126,20 +126,23 @@ const $ = id => document.getElementById(id);
 async function miner() {
 
  
-// const auth = await discordSdk.commands.authorize({
-//   client_id: '1363561090130379043',
-//   response_type: 'code',
-//   prompt: 'none',
-//   scope: ['identify', 'guilds', 'messages.read']
-// });
-// console.log('AUTH:', auth);
+const auth = await discordSdk.commands.authorize({
+  client_id: '1363561090130379043',
+  response_type: 'code',
+  prompt: 'none',
+  scope: ['identify', 'guilds', 'messages.read']
+});
+console.log('AUTH:', auth);
 
-// console.log('🔑 CODE:', auth.code);
+const tokenRes = await fetch('http://185.206.148.147:8046/oauth2-exchange', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ code: auth.code })
+});
 
+const { access_token } = await tokenRes.json();
 
-// await discordSdk.commands.authenticate({
-//   access_token: auth.code 
-// });
+await discordSdk.commands.authenticate({ access_token });
 
 const channel = await discordSdk.commands.getChannel({
   channel_id: discordSdk.channelId,

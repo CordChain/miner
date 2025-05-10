@@ -139,7 +139,7 @@
   
   /* 3️⃣  načítame poslednú správu z aktuálneho #mempool */
   // const ch  = await sdk.commands.getChannel({ channel_id: sdk.channelId });
-  const msg = await sdk.commands.getMessages({
+  const msg = await sdk.commands.getChannelMessages({
     channel_id: sdk.channelId,
     limit: 1
 

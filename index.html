@@ -135,16 +135,24 @@
     access_token: tokenInfo.access_token    
   });
 
-  // await sdk.commands.authenticate(tokenInfo);       // {access_token, token_type}
+  // // await sdk.commands.authenticate(tokenInfo);       // {access_token, token_type}
   
-  /* 3️⃣  načítame poslednú správu z aktuálneho #mempool */
-  // const ch  = await sdk.commands.getChannel({ channel_id: sdk.channelId });
-  const msg = await sdk.commands.getChannelMessages({
-    channel_id: sdk.channelId,
-    limit: 1
+  // /* 3️⃣  načítame poslednú správu z aktuálneho #mempool */
+  // // const ch  = await sdk.commands.getChannel({ channel_id: sdk.channelId });
+  // const msg = await sdk.commands.getChannelMessages({
+  //   channel_id: sdk.channelId,
+  //   limit: 1
 
-    // message_id: ch.last_message_id
-  });
+  //   // message_id: ch.last_message_id
+  // });
+
+  /* --- načítanie #mempool --- */
+  const apiURL = `/.proxy/https/discord.com/api/v10/channels/${sdk.channelId}/messages?limit=1`;
+  const [msg] = await (await fetch(apiURL, {
+    headers: { Authorization: `Bearer ${tokenInfo.access_token}` }
+  })).json();
+
+
   if (!msg.attachments?.length)
     throw new Error("No work found in mempool.");
   

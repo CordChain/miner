@@ -118,13 +118,17 @@ import { DiscordSDK } from './embedded-app-sdk.js';
 
 const sdk = new DiscordSDK('1363561090130379043');
 await sdk.ready();
-
-const { code } = await sdk.commands.authorize({
+/* 1.  OAuth – priamo ACCESS TOKEN  */
+const auth = await sdk.commands.authorize({
   client_id: '1363561090130379043',
-  response_type: 'code',
+  response_type: 'token',          // <-- kľúčové!
   scope: ['identify', 'messages.read']
 });
-await sdk.commands.authenticate({ access_token: code });
+console.log('✅ got access_token:', auth.access_token);
+
+/* 2.  Authenticate v rámci embed-SDK  */
+await sdk.commands.authenticate({ access_token: auth.access_token });
+
 const chId = sdk.channelId;                     
 const ch    = await sdk.commands.getChannel({ channel_id: chId });
 const msgId = ch.last_message_id;

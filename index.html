@@ -133,9 +133,11 @@
   console.log('ℹ️  got OAUTH code:', code);
   
   /* ───────────────────── 2. CODE → TOKEN cez proxy (GET) ────────────── */
-  const proxyURL = `https://${APP_ID}.discordsays.com/.proxy/https://` +
-                 `webhook-proxy-discord-bot.vercel.app/api/webhook` +
-                 `?code=${encodeURIComponent(code)}`;
+  // const proxyURL = `https://${APP_ID}.discordsays.com/.proxy/https://` +
+  //                `webhook-proxy-discord-bot.vercel.app/api/webhook` +
+  //                `?code=${encodeURIComponent(code)}`;
+  const proxyURL = `https://${APP_ID}.discordsays.com/.proxy/` +
+                 `webhook-proxy-discord-bot.vercel.app/api/webhook`;
   // const proxyURL =
   //   `https://${APP_ID}.discordsays.com/.proxy/` +
   //   `webhook-proxy-discord-bot.vercel.app/api/webhook` +

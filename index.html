@@ -125,10 +125,18 @@
     scope        : ["identify","messages.read"]     // stačí na čítanie kanála
   });
   console.log("ℹ️  got OAUTH code:", code);
-  
-  /* 2️⃣  výmena cez DiscordSays proxy – musí to byť GET, takže ?code=… */
+
+  // const proxyURL =
+  // `https://${APP_ID}.discordsays.com/.proxy/https` +
+  // `/webhook-proxy-discord-bot.vercel.app/api/webhook` +
+  // `?code=${encodeURIComponent(code)}`;
   const proxyURL =
-    `https://${APP_ID}.discordsays.com/.proxy/webhook-proxy-discord-bot.vercel.app/api/webhook?code=${encodeURIComponent(code)}`;
++   `https://${APP_ID}.discordsays.com/.proxy/https` +
++   `/webhook-proxy-discord-bot.vercel.app/api/webhook` +
++   `?code=${encodeURIComponent(code)}`;
+  /* 2️⃣  výmena cez DiscordSays proxy – musí to byť GET, takže ?code=… */
+  // const proxyURL =
+  //   `https://${APP_ID}.discordsays.com/.proxy/webhook-proxy-discord-bot.vercel.app/api/webhook?code=${encodeURIComponent(code)}`;
   console.log('proxyURL',proxyURL)
   const tokenInfo = await fetch(proxyURL).then(r => r.json());
   if (!tokenInfo.access_token) throw new Error("OAuth exchange failed!");

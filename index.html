@@ -113,161 +113,154 @@
       Made with ❤️ for CordChain miners · Source code available · Runs 100 % in your browser
     </footer>
   </main>
-
-<script type="module">
-  import { DiscordSDK } from "./embedded-app-sdk.js";
-  
-  const discordSdk = new DiscordSDK('1363561090130379043');
-  
-  let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
-  const $ = id => document.getElementById(id);
-  const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
-        icon = $("iconPlay"), label = $("btnLabel");
-  
-  let work, TARGET;
-  
-  async function getAccessTokenFromCode() {
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get("code");
-  
-    if (!code) {
-      const client_id = "1363561090130379043";
-      const redirect_uri = encodeURIComponent("https://miner.cordchain.xyz");
-      const scope = [
-        "identify", "guilds", "messages.read", "dm_channels.read",
-        "applications.commands", "activities.write", "activities.read"
-      ].join(" ");
-      const oauthUrl = `https://discord.com/oauth2/authorize?client_id=${client_id}&response_type=code&redirect_uri=${redirect_uri}&scope=${encodeURIComponent(scope)}&prompt=none`;
-      window.location.href = oauthUrl;
-      return null;
-    }
-  
-    const res = await fetch("https://webhook-proxy-discord-bot.vercel.app/api/webhook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code })
-    });
-  
-    const data = await res.json();
-    return data.access_token;
-  }
-  
-  async function miner() {
-    const access_token = await getAccessTokenFromCode();
-    if (!access_token) return;
-  
-    await discordSdk.commands.authenticate({ access_token });
-    const channel = await discordSdk.commands.getChannel({
-      channel_id: discordSdk.channelId,
-    });
-    console.log('📦 Channel:', channel);
-  
-    const sec = window.DiscordNative?.activitySecrets ?? {};
-    work = {
-      workId:     sec.workId      || "demo-work",
-      prevHash:   sec.prevHash    || "0".repeat(64),
-      merkleRoot: sec.merkleRoot  || "4bf717b19b6e8b9f0dd6bf…",
-      timestamp:  sec.timestamp   || Date.now(),
-      difficulty: sec.difficulty  || "0000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-      submitUrl:  sec.submitUrl   || "https://example.com/submit"
-    };
-  
-    $("workId").textContent     = work.workId;
-    $("prevHash").textContent   = work.prevHash.slice(0,16) + "…";
-    $("merkleRoot").textContent = work.merkleRoot.slice(0,16) + "…";
-    $("difficulty").textContent = work.difficulty.slice(0,12) + "…";
-    $("target").textContent     = work.difficulty;
-    TARGET = BigInt("0x" + work.difficulty);
-  
-    btn.addEventListener("click", () => mining ? stop() : start());
-  }
-  
-  function start() {
-    mining = true;
-    nonce = 0n;
-    attempts = 0;
-    bestHash = "";
-    startTime = performance.now();
-    label.textContent = "Stop Mining";
-    icon.setAttribute("d", "M6 6h12v12H6z");
-    stats.classList.remove("hidden");
-    solBox.classList.add("hidden");
-    updateUI();
-    mineLoop();
-  }
-  
-  function stop() {
-    mining = false;
-    label.textContent = "Start Mining";
-    icon.setAttribute("d",
-      "M14.752 11.168L8.234 7.409A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z");
-  }
-  
-  async function sha256Hex(str) {
-    const buf = new TextEncoder().encode(str);
-    const res = await crypto.subtle.digest("SHA-256", buf);
-    return [...new Uint8Array(res)].map(b => b.toString(16).padStart(2, "0")).join("");
-  }
-  
-  async function mineLoop() {
-    if (!mining) return;
-    for (let i = 0; i < 1500; i++) {
-      const hash = await sha256Hex(work.prevHash + work.merkleRoot + work.timestamp + nonce);
-      attempts++;
-      if (BigInt("0x" + hash) < TARGET) {
-        bestHash = hash;
-        found();
-        return;
-      }
-      nonce++;
-    }
-    updateUI();
-    requestAnimationFrame(mineLoop);
-  }
-  
-  function updateUI() {
-    $("nonce").textContent = nonce;
-    const elapsed = (performance.now() - startTime) / 1000;
-    $("rate").textContent = elapsed ? Math.floor(attempts / elapsed) : 0;
-    $("hash").textContent = bestHash ? bestHash.slice(0, 16) + "…" : "–";
-    $("elapsed").textContent = elapsed.toFixed(1);
-    $("attempts").textContent = attempts;
-    $("best").textContent = bestHash || "–";
-  }
-  
-  function found() {
-    mining = false;
-    label.textContent = "Start Mining";
-    icon.style.animation = "spin 6s linear infinite";
-    stats.classList.add("hidden");
-    solBox.classList.remove("hidden");
-    updateUI();
-  
-    const payload = {
-      workId: work.workId,
-      nonce: nonce.toString(),
-      hash: bestHash
-    };
-    $("payload").value = JSON.stringify(payload, null, 2);
-  }
-  
-  $("btnSend").addEventListener("click", async () => {
+  <script type="module">
+    import { DiscordSDK } from "./embedded-app-sdk.js";
+    
+    const discordSdk = new DiscordSDK('1363561090130379043');
+    
+    let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
+    const $ = id => document.getElementById(id);
+    const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
+          icon = $("iconPlay"), label = $("btnLabel");
+    
+    let work, TARGET;
+    
+    await discordSdk.ready();
+    console.log("✅ SDK Ready");
+    
     try {
-      await fetch(work.submitUrl, {
+      const auth = await discordSdk.commands.authorize({
+        client_id: '1363561090130379043',
+        response_type: 'code',
+        scope: [
+          'identify',
+          'guilds',
+          'messages.read',
+          'dm_channels.read',
+          'applications.commands',
+          'activities.write',
+          'activities.read'
+        ]
+      });
+      console.log('✅ Authorized:', auth);
+    
+      const tokenRes = await fetch("https://webhook-proxy-discord-bot.vercel.app/api/webhook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: $("payload").value
+        body: JSON.stringify({ code: auth.code })
       });
-      $("btnSend").textContent = "✅ Proof Submitted";
-      $("btnSend").disabled = true;
-    } catch {
-      $("btnSend").textContent = "❌ Retry";
+    
+      const { access_token } = await tokenRes.json();
+      if (!access_token) throw new Error("Access token missing");
+    
+      await discordSdk.commands.authenticate({ access_token });
+    
+      const sec = window.DiscordNative?.activitySecrets ?? {};
+      work = {
+        workId:     sec.workId      || "demo-work",
+        prevHash:   sec.prevHash    || "0".repeat(64),
+        merkleRoot: sec.merkleRoot  || "4bf717b19b6e8b9f0dd6bf...",
+        timestamp:  sec.timestamp   || Date.now(),
+        difficulty: sec.difficulty  || "0000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        submitUrl:  sec.submitUrl   || "https://example.com/submit"
+      };
+    
+      $("workId").textContent     = work.workId;
+      $("prevHash").textContent   = work.prevHash.slice(0,16) + "…";
+      $("merkleRoot").textContent = work.merkleRoot.slice(0,16) + "…";
+      $("difficulty").textContent = work.difficulty.slice(0,12) + "…";
+      $("target").textContent     = work.difficulty;
+    
+      TARGET = BigInt("0x" + work.difficulty);
+    
+      btn.addEventListener("click", () => mining ? stop() : start());
+    } catch (err) {
+      console.error("❌ Authorization failed:", err);
     }
-  });
-  
-  await discordSdk.ready();
-  console.log("✅ SDK Ready");
-  miner();
-  </script>
+    
+    function start() {
+      mining = true;
+      nonce = 0n;
+      attempts = 0;
+      bestHash = "";
+      startTime = performance.now();
+      label.textContent = "Stop Mining";
+      icon.setAttribute("d", "M6 6h12v12H6z");
+      stats.classList.remove("hidden");
+      solBox.classList.add("hidden");
+      updateUI();
+      mineLoop();
+    }
+    
+    function stop() {
+      mining = false;
+      label.textContent = "Start Mining";
+      icon.setAttribute("d",
+        "M14.752 11.168L8.234 7.409A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z");
+    }
+    
+    async function sha256Hex(str) {
+      const buf = new TextEncoder().encode(str);
+      const res = await crypto.subtle.digest("SHA-256", buf);
+      return [...new Uint8Array(res)].map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+    
+    async function mineLoop() {
+      if (!mining) return;
+      for (let i = 0; i < 1500; i++) {
+        const hash = await sha256Hex(work.prevHash + work.merkleRoot + work.timestamp + nonce);
+        attempts++;
+        if (BigInt("0x" + hash) < TARGET) {
+          bestHash = hash;
+          found();
+          return;
+        }
+        nonce++;
+      }
+      updateUI();
+      requestAnimationFrame(mineLoop);
+    }
+    
+    function updateUI() {
+      $("nonce").textContent = nonce;
+      const elapsed = (performance.now() - startTime) / 1000;
+      $("rate").textContent = elapsed ? Math.floor(attempts / elapsed) : 0;
+      $("hash").textContent = bestHash ? bestHash.slice(0, 16) + "…" : "–";
+      $("elapsed").textContent = elapsed.toFixed(1);
+      $("attempts").textContent = attempts;
+      $("best").textContent = bestHash || "–";
+    }
+    
+    function found() {
+      mining = false;
+      label.textContent = "Start Mining";
+      icon.style.animation = "spin 6s linear infinite";
+      stats.classList.add("hidden");
+      solBox.classList.remove("hidden");
+      updateUI();
+    
+      const payload = {
+        workId: work.workId,
+        nonce: nonce.toString(),
+        hash: bestHash
+      };
+      $("payload").value = JSON.stringify(payload, null, 2);
+    }
+    
+    $("btnSend").addEventListener("click", async () => {
+      try {
+        await fetch(work.submitUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: $("payload").value
+        });
+        $("btnSend").textContent = "✅ Proof Submitted";
+        $("btnSend").disabled = true;
+      } catch {
+        $("btnSend").textContent = "❌ Retry";
+      }
+    });
+    </script>
+    
 </body>
 </html>

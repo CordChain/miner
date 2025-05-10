@@ -128,12 +128,14 @@
   const proxyURL = `/.proxy/webhook-proxy/api/webhook?code=${encodeURIComponent(code)}`;
 
  console.log('proxyURL',proxyURL)
-  const tokenInfo = await fetch(proxyURL).then(r => r.json());
-  if (!tokenInfo.access_token) throw new Error("OAuth exchange failed!");
+  const {access_token, work} = await fetch(proxyURL).then(r => r.json());
+  await sdk.commands.authenticate({ access_token });   // RPC prihlásenie
+
+  // if (!tokenInfo.access_token) throw new Error("OAuth exchange failed!");
   
-  await sdk.commands.authenticate({
-    access_token: tokenInfo.access_token    
-  });
+  // await sdk.commands.authenticate({
+  //   access_token: tokenInfo.access_token    
+  // });
 
   // // await sdk.commands.authenticate(tokenInfo);       // {access_token, token_type}
   
@@ -147,20 +149,20 @@
   // });
 
   /* --- načítanie #mempool --- */
-  const apiURL =
-  `/.proxy/discord-api/channels/${sdk.channelId}/messages?limit=1`;
+//   const apiURL =
+//   `/.proxy/discord-api/channels/${sdk.channelId}/messages?limit=1`;
 
-const res = await fetch(apiURL, {
-  headers: { Authorization: `Bearer ${tokenInfo.access_token}` }
-});
-if (!res.ok) throw new Error(`Discord API returned ${res.status}`);
+// const res = await fetch(apiURL, {
+//   headers: { Authorization: `Bearer ${tokenInfo.access_token}` }
+// });
+// if (!res.ok) throw new Error(`Discord API returned ${res.status}`);
 
-const [msg] = await res.json();
+// const [msg] = await res.json();
 
-  if (!msg.attachments?.length)
-    throw new Error("No work found in mempool.");
+//   if (!msg.attachments?.length)
+//     throw new Error("No work found in mempool.");
   
-  const work = await (await fetch(msg.attachments[0].url)).json();
+//   const work = await (await fetch(msg.attachments[0].url)).json();
   
   /* 4️⃣  UI */
   $('workId').textContent     = work.workId;

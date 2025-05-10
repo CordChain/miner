@@ -112,109 +112,141 @@
     </section>
   </section>
 </main>
-
 <script type="module">
-import { DiscordSDK } from './embedded-app-sdk.js';
-const APP_ID = "1363561090130379043";
-
-const sdk = new DiscordSDK('1363561090130379043');
-await sdk.ready();
-
-
-/* ---------- 2️⃣  OAuth — public flow (code) ---------- */
-const { code } = await sdk.commands.authorize({
-  client_id     : APP_ID,
-  response_type : "code",
-  scope         : ["identify","messages.read"]
-});
-console.log("ℹ️ got code:", code);
-
-/* 🔗 3️⃣  výmena CODE→TOKEN cez discordsays-proxy  */
-const proxyURL = `https://${APP_ID}.discordsays.com/.proxy/` +
-                 `webhook-proxy-discord-bot.vercel.app/api/webhook`;
-
-const { access_token, token_type="Bearer" } = await
-      fetch(proxyURL,{
-        method  :"POST",
-        headers :{ "Content-Type":"application/json" },
-        body    :JSON.stringify({ code })
-      }).then(r=>r.json());
-
-if(!access_token) throw new Error("OAuth exchange failed");
-await sdk.commands.authenticate({ access_token, token_type });
-
-/* ---------- 4️⃣  načítanie posledného “work” z #mempool ---------- */
-const ch   = await sdk.commands.getChannel({ channel_id: sdk.channelId });
-const msg  = await sdk.commands.getMessage({
-  channel_id : sdk.channelId,
-  message_id : ch.last_message_id
-});
-if(!msg.attachments?.length) throw new Error("No work in mempool");
-
-const work = await (await fetch(msg.attachments[0].url)).json();
-
-/* ---------- UI vyplnenie ------------------------------------------- */
-$('workId').textContent     = work.workId;
-$('prevHash').textContent   = work.prevHash.slice(0,16)+'…';
-$('merkleRoot').textContent = work.merkleRoot.slice(0,16)+'…';
-$('difficulty').textContent = work.difficulty.slice(0,12)+'…';
-$('target').textContent     = work.difficulty;
-
-const TARGET = BigInt('0x'+work.difficulty);
-
-/* ---------- ťažba --------------------------------------------------- */
-let mining=false, nonce=0n,best='', attempts=0,startTime;
-
-$('btnToggle').onclick = () => mining ? stop() : start();
-
-function start(){
-  mining=true; nonce=0n; attempts=0; best=''; startTime=performance.now();
-  $('btnLabel').textContent='Stop Mining';
-  $('iconPlay').setAttribute('d','M6 6h12v12H6z');
-  $('stats').classList.remove('hidden'); $('solution').classList.add('hidden');
-  loop();
-}
-function stop(){
-  mining=false;
-  $('btnLabel').textContent='Start Mining';
-  $('iconPlay').setAttribute('d',
-    'M14.752 11.168L8.234 7.409A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z');
-}
-async function sha256hex(s){
-  const buf=new TextEncoder().encode(s);
-  const h=await crypto.subtle.digest('SHA-256',buf);
-  return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-async function loop(){
-  if (!mining) return;
-  for (let i=0;i<1500;i++){
-    const hash=await sha256hex(
-      work.prevHash+work.merkleRoot+work.timestamp+nonce);
-    attempts++;
-    if (BigInt('0x'+hash)<TARGET){ best=hash; found(); return; }
-    nonce++;
+  import { DiscordSDK } from './embedded-app-sdk.js';
+  
+  const APP_ID = '1363561090130379043';          // tvoje application ID
+  const sdk    = new DiscordSDK(APP_ID);
+  
+  /* ────────────────────────────── helper ────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  
+  /* ─────────────────────── 1. SDK ready & authorize ─────────────────── */
+  await sdk.ready();
+  console.log('✅ SDK ready');
+  
+  const { code } = await sdk.commands.authorize({
+    client_id    : APP_ID,
+    response_type: 'code',
+    scope        : ['identify', 'messages.read']         // stačí minumum
+  });
+  console.log('ℹ️  got OAUTH code:', code);
+  
+  /* ───────────────────── 2. CODE → TOKEN cez proxy (GET) ────────────── */
+  const proxyURL =
+    `https://${APP_ID}.discordsays.com/.proxy/` +
+    `webhook-proxy-discord-bot.vercel.app/api/webhook` +
+    `?code=${encodeURIComponent(code)}`;          // GET – CSP friendly
+  
+  const { access_token, token_type = 'Bearer' } =
+        await (await fetch(proxyURL)).json();
+  
+  if (!access_token) throw new Error('OAuth exchange failed');
+  await sdk.commands.authenticate({ access_token, token_type });
+  console.log('✅ SDK authenticated');
+  
+  /* ─────────────────── 3. načítanie práce z #mempool ────────────────── */
+  const ch  = await sdk.commands.getChannel({ channel_id: sdk.channelId });
+  const msg = await sdk.commands.getMessage({
+    channel_id: sdk.channelId,
+    message_id: ch.last_message_id
+  });
+  
+  if (!msg.attachments?.length)
+    throw new Error('No work found in #mempool');
+  
+  const work = await (await fetch(msg.attachments[0].url)).json();
+  console.log('🧱 work package:', work);
+  
+  /* ────────────── vyplnenie UI & príprava premenných ─────────────────── */
+  $('workId'   ).textContent = work.workId;
+  $('prevHash' ).textContent = work.prevHash.slice(0, 16)   + '…';
+  $('merkleRoot').textContent= work.merkleRoot.slice(0, 16) + '…';
+  $('difficulty').textContent= work.difficulty.slice(0, 12) + '…';
+  $('target'   ).textContent = work.difficulty;
+  
+  const TARGET = BigInt('0x' + work.difficulty);
+  
+  /* ────────────────────── 4.  ŤAŽBA / DASHBOARD  ─────────────────────── */
+  let mining = false, nonce = 0n, best = '', attempts = 0, startTime = 0;
+  
+  $('btnToggle').onclick = () => mining ? stop() : start();
+  
+  function start () {
+    mining       = true;
+    nonce        = 0n;
+    attempts     = 0;
+    best         = '';
+    startTime    = performance.now();
+    $('btnLabel').textContent = 'Stop Mining';
+    $('iconPlay').setAttribute('d', 'M6 6h12v12H6z');          // ▮▮
+    $('stats').classList.remove('hidden');
+    $('solution').classList.add('hidden');
+    loop();
   }
-  ui(); requestAnimationFrame(loop);
-}
-function ui(){
-  $('nonce').textContent=nonce;
-  const t=(performance.now()-startTime)/1000;
-  $('rate').textContent=t?Math.floor(attempts/t):0;
-  $('hash').textContent=best?best.slice(0,16)+'…':'–';
-  $('elapsed').textContent=t.toFixed(1);
-  $('attempts').textContent=attempts;
-  $('best').textContent=best||'–';
-}
-function found(){
-  mining=false; ui();
-  $('stats').classList.add('hidden'); $('solution').classList.remove('hidden');
-  $('iconPlay').style.animation='spin 6s linear infinite';
-  $('payload').value=JSON.stringify({ workId:work.workId,
-                                      nonce:nonce.toString(),
-                                      hash:best },null,2);
-}
-/* ------------------------------------------------------------------- */
-function $(id){return document.getElementById(id);}
-</script>
+  function stop () {
+    mining       = false;
+    $('btnLabel').textContent = 'Start Mining';
+    $('iconPlay').setAttribute(
+      'd',
+      'M14.752 11.168L8.234 7.409A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z'); // ▶
+  }
+  
+  async function sha256hex (s) {
+    const buf = new TextEncoder().encode(s);
+    const h   = await crypto.subtle.digest('SHA-256', buf);
+    return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  
+  async function loop () {
+    if (!mining) return;
+    for (let i = 0; i < 1500; i++) {
+      const hash = await sha256hex(
+        work.prevHash + work.merkleRoot + work.timestamp + nonce
+      );
+      attempts++;
+      if (BigInt('0x' + hash) < TARGET) { best = hash; found(); return; }
+      nonce++;
+    }
+    ui(); requestAnimationFrame(loop);
+  }
+  
+  function ui () {
+    $('nonce'   ).textContent = nonce;
+    const t = (performance.now() - startTime) / 1000;
+    $('rate'    ).textContent = t ? Math.floor(attempts / t) : 0;
+    $('hash'    ).textContent = best ? best.slice(0, 16) + '…' : '–';
+    $('elapsed' ).textContent = t.toFixed(1);
+    $('attempts').textContent = attempts;
+    $('best'    ).textContent = best || '–';
+  }
+  
+  function found () {
+    mining = false; ui();
+    $('stats'   ).classList.add   ('hidden');
+    $('solution').classList.remove('hidden');
+    $('iconPlay').style.animation = 'spin 6s linear infinite';
+    $('payload').value = JSON.stringify(
+      { workId: work.workId, nonce: nonce.toString(), hash: best },
+      null, 2
+    );
+  }
+  
+  /* ───────────── odoslanie proof-of-work späť na submitUrl ───────────── */
+  $('btnSend').onclick = async () => {
+    try {
+      await fetch(work.submitUrl, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : $('payload').value
+      });
+      $('btnSend').textContent = '✅ Proof submitted';
+      $('btnSend').disabled = true;
+    } catch {
+      $('btnSend').textContent = '❌ Retry';
+    }
+  };
+  </script>
+  
 </body>
 </html>

@@ -118,27 +118,45 @@ import { DiscordSDK } from './embedded-app-sdk.js';
 
 const sdk = new DiscordSDK('1363561090130379043');
 await sdk.ready();
-/* 1.  OAuth – priamo ACCESS TOKEN  */
-const auth = await sdk.commands.authorize({
-  client_id: '1363561090130379043',
-  response_type: 'token',          // <-- kľúčové!
-  scope: ['identify', 'messages.read']
+
+
+/* ------------------ 2. OAuth ( CODE flow ) ------------ */
+const { code } = await sdk.commands.authorize({
+  client_id: "1363561090130379043",
+  response_type: "code",
+  scope: ["identify", "messages.read"]        // len to, čo naozaj potrebujeme
 });
-console.log('✅ got access_token:', auth.access_token);
+console.log("ℹ️  got OAUTH code:", code);
 
-/* 2.  Authenticate v rámci embed-SDK  */
-await sdk.commands.authenticate({ access_token: auth.access_token });
+/* ➜ výmena CODE → ACCESS TOKEN cez váš malý proxy server */
+const tokRes = await fetch("https://webhook-proxy-discord-bot.vercel.app/api/webhook",{
+  method:"POST", headers:{ "Content-Type":"application/json"},
+  body: JSON.stringify({ code })
+});
+const oauth = await tokRes.json();           // { access_token, token_type, ‥ }
+if(!oauth.access_token) throw new Error("No access token");
+console.log("✅ token OK");
 
-const chId = sdk.channelId;                     
-const ch    = await sdk.commands.getChannel({ channel_id: chId });
-const msgId = ch.last_message_id;
-const msg   = await sdk.commands.getMessage({ channel_id: chId, message_id: msgId });
+/* ------------------ 3. RPC-authenticate --------------- */
+await sdk.commands.authenticate({
+  access_token : oauth.access_token,
+  token_type   : oauth.token_type ?? "Bearer"   // <-- dôležité!
+});
 
-if (!msg.attachments?.length) {
-  throw new Error('no attachment');
-}
-const att = msg.attachments[0];                 
-const work = await (await fetch(att.url)).json(); 
+/* ------------------ 4. Stiahnutie posledného work-TX -- */
+const mempoolMsg = await sdk.commands.getChannel({
+  channel_id : sdk.channelId
+}).then(ch => sdk.commands.getMessage({
+  channel_id : sdk.channelId,
+  message_id : ch.last_message_id
+}));
+
+if(!mempoolMsg.attachments?.length)
+  throw new Error("V #mempool nie sú žiadne prílohy");
+
+const work = await (await fetch(mempoolMsg.attachments[0].url)).json();
+/* work = { workId, prevHash, merkleRoot, difficulty, timestamp, submitUrl } */
+
 
 /* ---------- UI vyplnenie ------------------------------------------- */
 $('workId').textContent     = work.workId;

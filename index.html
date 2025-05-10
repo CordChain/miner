@@ -1,264 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CordChain Miner Dashboard</title>
-  <script src="./tailwindcss.js"></script>
-  
-  <style>
-    /* Animations */
-    @keyframes pulse-hash {0%,100%{opacity:.35}50%{opacity:1}}
-    @keyframes spin {to{transform:rotate(360deg)}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CordChain Miner</title>
+
+<!-- Tailwind (stačí CDN dev build) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+@keyframes pulse-hash {0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-[#0b1120] via-[#101629] to-[#1a253b] text-gray-100 flex items-center justify-center p-4 select-none">
-  <main class="w-full max-w-2xl bg-gray-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 space-y-10 relative overflow-hidden">
-    <!-- Decorative blurred rings -->
-    <div class="absolute -top-20 -left-32 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"></div>
-    <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl"></div>
+<body
+  class="min-h-screen bg-gradient-to-br from-[#0b1120] via-[#101629] to-[#1a253b]
+         text-gray-100 flex items-center justify-center p-4 select-none">
 
-    <!-- Header -->
-    <header class="text-center space-y-2">
-      <h1 class="text-3xl font-extrabold tracking-wide">⛏️ CordChain Miner</h1>
-      <p class="text-sm opacity-75 max-w-prose mx-auto">
-        Your browser is part of <span class="text-emerald-400 font-semibold">CordChain</span>'s decentralised
-        network. Every hash you calculate helps advance the next public block. <br class="hidden sm:block">All
-        work is done <strong>client-side</strong>; only the winning proof is sent back to Discord.
-      </p>
-    </header>
+<main
+  class="w-full max-w-2xl bg-gray-800/60 backdrop-blur-2xl rounded-3xl
+         shadow-2xl p-8 space-y-10 relative overflow-hidden">
 
-    <!-- Work package overview -->
-    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-      <div class="bg-gray-700/40 p-3 rounded-xl">
-        <div class="font-semibold text-emerald-300">Work ID</div>
-        <div id="workId" class="truncate">–</div>
+  <!-- header ---------------------------------------------------- -->
+  <header class="text-center space-y-2">
+    <h1 class="text-3xl font-extrabold tracking-wide">⛏️ CordChain Miner</h1>
+    <p class="text-sm opacity-75 max-w-prose mx-auto">
+      Fully client-side miner – reads work directly from <code>#mempool</code>
+      and posts proof back to Discord.
+    </p>
+  </header>
+
+  <!-- work overview --------------------------------------------- -->
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+    <div class="bg-gray-700/40 p-3 rounded-xl">
+      <div class="font-semibold text-emerald-300">Work&nbsp;ID</div>
+      <div id="workId" class="truncate">–</div>
+    </div>
+    <div class="bg-gray-700/40 p-3 rounded-xl col-span-2 sm:col-span-1">
+      <div class="font-semibold text-emerald-300">Prev&nbsp;Hash</div>
+      <div id="prevHash" class="truncate">–</div>
+    </div>
+    <div class="bg-gray-700/40 p-3 rounded-xl col-span-2 sm:col-span-1">
+      <div class="font-semibold text-emerald-300">Merkle</div>
+      <div id="merkleRoot" class="truncate">–</div>
+    </div>
+    <div class="bg-gray-700/40 p-3 rounded-xl">
+      <div class="font-semibold text-emerald-300">Difficulty</div>
+      <div id="difficulty" class="truncate">–</div>
+    </div>
+  </section>
+
+  <!-- live stats ------------------------------------------------- -->
+  <section id="stats" class="hidden">
+    <h2 class="text-center text-sm uppercase tracking-wider mb-4 opacity-80">
+      Live Performance
+    </h2>
+    <div class="grid grid-cols-3 gap-4 text-center text-sm">
+      <div class="bg-gray-700/30 rounded-xl p-4">
+        <div class="text-xs opacity-70">Nonce</div>
+        <div id="nonce" class="text-lg font-mono">0</div>
       </div>
-      <div class="bg-gray-700/40 p-3 rounded-xl col-span-2 sm:col-span-1">
-        <div class="font-semibold text-emerald-300">Prev Hash</div>
-        <div id="prevHash" class="truncate">–</div>
+      <div class="bg-gray-700/30 rounded-xl p-4">
+        <div class="text-xs opacity-70">Hash&nbsp;/&nbsp;s</div>
+        <div id="rate" class="text-lg font-mono">0</div>
       </div>
-      <div class="bg-gray-700/40 p-3 rounded-xl col-span-2 sm:col-span-1">
-        <div class="font-semibold text-emerald-300">Merkle</div>
-        <div id="merkleRoot" class="truncate">–</div>
+      <div class="bg-gray-700/30 rounded-xl p-4">
+        <div class="text-xs opacity-70">Current&nbsp;Hash</div>
+        <div id="hash"
+             class="text-[10px] md:text-xs font-mono break-all
+                    animate-[pulse-hash_2s_infinite]">–</div>
       </div>
-      <div class="bg-gray-700/40 p-3 rounded-xl">
-        <div class="font-semibold text-emerald-300">Difficulty</div>
-        <div id="difficulty" class="truncate">–</div>
-      </div>
+    </div>
+  </section>
+
+  <!-- detailed --------------------------------------------------- -->
+  <details id="detailStats" class="bg-gray-700/30 rounded-xl p-4">
+    <summary class="cursor-pointer font-semibold text-sm">ℹ️ Detailed stats</summary>
+    <div class="grid sm:grid-cols-2 gap-4 mt-4 text-sm">
+      <div><div class="text-xs opacity-70">Elapsed (s)</div>
+        <div id="elapsed" class="font-mono">0</div></div>
+      <div><div class="text-xs opacity-70">Attempts</div>
+        <div id="attempts" class="font-mono">0</div></div>
+      <div class="sm:col-span-2"><div class="text-xs opacity-70">Best hash</div>
+        <div id="best" class="font-mono break-all">–</div></div>
+      <div class="sm:col-span-2"><div class="text-xs opacity-70">Target</div>
+        <div id="target" class="font-mono break-all"></div></div>
+    </div>
+  </details>
+
+  <!-- controls --------------------------------------------------- -->
+  <section class="flex flex-col items-center gap-4">
+    <button id="btnToggle"
+      class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700
+             active:scale-95 transition px-6 py-3 rounded-2xl font-semibold
+             shadow-lg">
+      <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg"
+           class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+           stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M14.752 11.168l-6.518-3.759A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z"/>
+      </svg>
+      <span id="btnLabel">Start Mining</span>
+    </button>
+
+    <section id="solution" class="hidden w-full">
+      <h3 class="text-center text-green-400 font-semibold mb-3">
+        🎉 Block solved – share your proof!
+      </h3>
+      <textarea id="payload" readonly
+        class="w-full h-28 bg-gray-700/60 p-3 rounded text-xs font-mono"></textarea>
     </section>
+  </section>
+</main>
 
-    <!-- Live dashboard -->
-    <section id="stats" class="hidden">
-      <h2 class="text-center text-sm uppercase tracking-wider mb-4 opacity-80">Live Performance</h2>
-      <div class="grid grid-cols-3 gap-4 text-center text-sm">
-        <div class="bg-gray-700/30 rounded-xl p-4">
-          <div class="text-xs opacity-70">Nonce</div>
-          <div id="nonce" class="text-lg font-mono">0</div>
-        </div>
-        <div class="bg-gray-700/30 rounded-xl p-4">
-          <div class="text-xs opacity-70">Hash / s</div>
-          <div id="rate" class="text-lg font-mono">0</div>
-        </div>
-        <div class="bg-gray-700/30 rounded-xl p-4">
-          <div class="text-xs opacity-70">Current Hash</div>
-          <div id="hash" class="text-[10px] md:text-xs font-mono break-all animate-[pulse-hash_2s_infinite]">–</div>
-        </div>
-      </div>
-    </section>
+<script type="module">
+import { DiscordSDK } from './embedded-app-sdk.js';
 
-    <!-- Detailed stats (collapsible) -->
-    <details id="detailStats" class="bg-gray-700/30 rounded-xl p-4">
-      <summary class="cursor-pointer outline-none select-none font-semibold text-sm">ℹ️ Detailed Stats</summary>
-      <div class="grid sm:grid-cols-2 gap-4 mt-4 text-sm">
-        <div>
-          <div class="text-xs opacity-70">Elapsed Time (s)</div>
-          <div id="elapsed" class="font-mono">0</div>
-        </div>
-        <div>
-          <div class="text-xs opacity-70">Total Attempts</div>
-          <div id="attempts" class="font-mono">0</div>
-        </div>
-        <div class="sm:col-span-2">
-          <div class="text-xs opacity-70">Best Hash So Far</div>
-          <div id="best" class="font-mono break-all">–</div>
-        </div>
-        <div class="sm:col-span-2">
-          <div class="text-xs opacity-70">Target (hex)</div>
-          <div id="target" class="font-mono break-all"></div>
-        </div>
-      </div>
-    </details>
+const sdk = new DiscordSDK('1363561090130379043');
+await sdk.ready();
 
-    <!-- CTA / status area -->
-    <section class="flex flex-col items-center gap-4">
-      <button id="btnToggle" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition px-6 py-3 rounded-2xl font-semibold shadow-lg">
-        <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M14.752 11.168l-6.518-3.759A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z"/>
-        </svg>
-        <span id="btnLabel">Start Mining</span>
-      </button>
+const { code } = await sdk.commands.authorize({
+  client_id: '1363561090130379043',
+  response_type: 'code',
+  scope: ['identify', 'messages.read']
+});
+await sdk.commands.authenticate({ access_token: code });
+const chId = sdk.channelId;                     
+const ch    = await sdk.commands.getChannel({ channel_id: chId });
+const msgId = ch.last_message_id;
+const msg   = await sdk.commands.getMessage({ channel_id: chId, message_id: msgId });
 
-      <section id="solution" class="hidden w-full">
-        <h3 class="text-center text-green-400 font-semibold mb-3">🎉 Block Solved – share your proof!</h3>
-        <textarea id="payload" readonly class="w-full h-28 bg-gray-700/60 p-3 rounded text-xs font-mono"></textarea>
-        <button id="btnSend" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl px-4 py-3 font-medium shadow">
-          Submit Proof to Discord
-        </button>
-      </section>
-    </section>
+if (!msg.attachments?.length) {
+  throw new Error('no attachment');
+}
+const att = msg.attachments[0];                 
+const work = await (await fetch(att.url)).json(); 
 
-    <footer class="text-center text-xs opacity-50 pt-8 border-t border-gray-700/40">
-      Made with ❤️ for CordChain miners · Source code available · Runs 100 % in your browser
-    </footer>
-  </main>
-  <script type="module">
-    import { DiscordSDK } from "./embedded-app-sdk.js";
-    
-    const discordSdk = new DiscordSDK('1363561090130379043');
-    
-    let mining = false, nonce = 0n, bestHash = "", attempts = 0, startTime;
-    const $ = id => document.getElementById(id);
-    const btn = $("btnToggle"), stats = $("stats"), solBox = $("solution"),
-          icon = $("iconPlay"), label = $("btnLabel");
-    
-    let work, TARGET;
-    
-    await discordSdk.ready();
-    console.log("✅ SDK Ready");
-    
-    try {
-      const auth = await discordSdk.commands.authorize({
-        client_id: '1363561090130379043',
-        response_type: 'code',
-        scope: [
-          'identify',
-          'guilds',
-          'applications.commands',
-          'activities.write',
-          'activities.read'
-        ]
-      });
-      console.log('✅ Authorized:', auth);
-    
-      const tokenRes = await fetch("https://webhook-proxy-discord-bot.vercel.app/api/webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: auth.code })
-      });
-    
-      const { access_token } = await tokenRes.json();
-      if (!access_token) throw new Error("Access token missing");
-    
-      await discordSdk.commands.authenticate({ access_token });
-    
-      const sec = window.DiscordNative?.activitySecrets ?? {};
-      work = {
-        workId:     sec.workId      || "demo-work",
-        prevHash:   sec.prevHash    || "0".repeat(64),
-        merkleRoot: sec.merkleRoot  || "4bf717b19b6e8b9f0dd6bf...",
-        timestamp:  sec.timestamp   || Date.now(),
-        difficulty: sec.difficulty  || "0000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-        submitUrl:  sec.submitUrl   || "https://example.com/submit"
-      };
-    
-      $("workId").textContent     = work.workId;
-      $("prevHash").textContent   = work.prevHash.slice(0,16) + "…";
-      $("merkleRoot").textContent = work.merkleRoot.slice(0,16) + "…";
-      $("difficulty").textContent = work.difficulty.slice(0,12) + "…";
-      $("target").textContent     = work.difficulty;
-    
-      TARGET = BigInt("0x" + work.difficulty);
-    
-      btn.addEventListener("click", () => mining ? stop() : start());
-    } catch (err) {
-      console.error("❌ Authorization failed:", err);
-    }
-    
-    function start() {
-      mining = true;
-      nonce = 0n;
-      attempts = 0;
-      bestHash = "";
-      startTime = performance.now();
-      label.textContent = "Stop Mining";
-      icon.setAttribute("d", "M6 6h12v12H6z");
-      stats.classList.remove("hidden");
-      solBox.classList.add("hidden");
-      updateUI();
-      mineLoop();
-    }
-    
-    function stop() {
-      mining = false;
-      label.textContent = "Start Mining";
-      icon.setAttribute("d",
-        "M14.752 11.168L8.234 7.409A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z");
-    }
-    
-    async function sha256Hex(str) {
-      const buf = new TextEncoder().encode(str);
-      const res = await crypto.subtle.digest("SHA-256", buf);
-      return [...new Uint8Array(res)].map(b => b.toString(16).padStart(2, "0")).join("");
-    }
-    
-    async function mineLoop() {
-      if (!mining) return;
-      for (let i = 0; i < 1500; i++) {
-        const hash = await sha256Hex(work.prevHash + work.merkleRoot + work.timestamp + nonce);
-        attempts++;
-        if (BigInt("0x" + hash) < TARGET) {
-          bestHash = hash;
-          found();
-          return;
-        }
-        nonce++;
-      }
-      updateUI();
-      requestAnimationFrame(mineLoop);
-    }
-    
-    function updateUI() {
-      $("nonce").textContent = nonce;
-      const elapsed = (performance.now() - startTime) / 1000;
-      $("rate").textContent = elapsed ? Math.floor(attempts / elapsed) : 0;
-      $("hash").textContent = bestHash ? bestHash.slice(0, 16) + "…" : "–";
-      $("elapsed").textContent = elapsed.toFixed(1);
-      $("attempts").textContent = attempts;
-      $("best").textContent = bestHash || "–";
-    }
-    
-    function found() {
-      mining = false;
-      label.textContent = "Start Mining";
-      icon.style.animation = "spin 6s linear infinite";
-      stats.classList.add("hidden");
-      solBox.classList.remove("hidden");
-      updateUI();
-    
-      const payload = {
-        workId: work.workId,
-        nonce: nonce.toString(),
-        hash: bestHash
-      };
-      $("payload").value = JSON.stringify(payload, null, 2);
-    }
-    
-    $("btnSend").addEventListener("click", async () => {
-      try {
-        await fetch(work.submitUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: $("payload").value
-        });
-        $("btnSend").textContent = "✅ Proof Submitted";
-        $("btnSend").disabled = true;
-      } catch {
-        $("btnSend").textContent = "❌ Retry";
-      }
-    });
-    </script>
-    
+/* ---------- UI vyplnenie ------------------------------------------- */
+$('workId').textContent     = work.workId;
+$('prevHash').textContent   = work.prevHash.slice(0,16)+'…';
+$('merkleRoot').textContent = work.merkleRoot.slice(0,16)+'…';
+$('difficulty').textContent = work.difficulty.slice(0,12)+'…';
+$('target').textContent     = work.difficulty;
+
+const TARGET = BigInt('0x'+work.difficulty);
+
+/* ---------- ťažba --------------------------------------------------- */
+let mining=false, nonce=0n,best='', attempts=0,startTime;
+
+$('btnToggle').onclick = () => mining ? stop() : start();
+
+function start(){
+  mining=true; nonce=0n; attempts=0; best=''; startTime=performance.now();
+  $('btnLabel').textContent='Stop Mining';
+  $('iconPlay').setAttribute('d','M6 6h12v12H6z');
+  $('stats').classList.remove('hidden'); $('solution').classList.add('hidden');
+  loop();
+}
+function stop(){
+  mining=false;
+  $('btnLabel').textContent='Start Mining';
+  $('iconPlay').setAttribute('d',
+    'M14.752 11.168L8.234 7.409A1 1 0 007 8.309v7.384a1 1 0 001.234.97l6.518-1.856a1 1 0 00.734-.97v-3.57a1 1 0 00-.734-.97z');
+}
+async function sha256hex(s){
+  const buf=new TextEncoder().encode(s);
+  const h=await crypto.subtle.digest('SHA-256',buf);
+  return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function loop(){
+  if (!mining) return;
+  for (let i=0;i<1500;i++){
+    const hash=await sha256hex(
+      work.prevHash+work.merkleRoot+work.timestamp+nonce);
+    attempts++;
+    if (BigInt('0x'+hash)<TARGET){ best=hash; found(); return; }
+    nonce++;
+  }
+  ui(); requestAnimationFrame(loop);
+}
+function ui(){
+  $('nonce').textContent=nonce;
+  const t=(performance.now()-startTime)/1000;
+  $('rate').textContent=t?Math.floor(attempts/t):0;
+  $('hash').textContent=best?best.slice(0,16)+'…':'–';
+  $('elapsed').textContent=t.toFixed(1);
+  $('attempts').textContent=attempts;
+  $('best').textContent=best||'–';
+}
+function found(){
+  mining=false; ui();
+  $('stats').classList.add('hidden'); $('solution').classList.remove('hidden');
+  $('iconPlay').style.animation='spin 6s linear infinite';
+  $('payload').value=JSON.stringify({ workId:work.workId,
+                                      nonce:nonce.toString(),
+                                      hash:best },null,2);
+}
+/* ------------------------------------------------------------------- */
+function $(id){return document.getElementById(id);}
+</script>
 </body>
 </html>

@@ -134,7 +134,8 @@
 
 
  console.log('proxyURL',proxyURL)
-  const {access_token, work} = await fetch(proxyURL).then(r => r.json());
+  const data = await fetch(proxyURL).then(r => r.json());
+  console.log('data',data)
   await sdk.commands.authenticate({ access_token });   // RPC prihlásenie
 
   // if (!tokenInfo.access_token) throw new Error("OAuth exchange failed!");

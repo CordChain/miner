@@ -230,6 +230,7 @@
     $('solution').classList.remove('hidden');
     $('iconPlay').style.animation='spin 6s linear infinite';
     $('payload').value = JSON.stringify({
+      guildId : sdk.guildId,
       workId: work.workId,
       nonce : nonce.toString(),
       hash  : best

@@ -172,7 +172,7 @@
 //     throw new Error("No work found in mempool.");
   
   const work = data.work;
-  
+  console.log('work',work)
   /* 4️⃣  UI */
   $('workId').textContent     = work.workId;
   $('prevHash').textContent   = work.prevHash.slice(0,16)+'…';

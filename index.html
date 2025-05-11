@@ -233,7 +233,8 @@
       guildId : sdk.guildId,
       workId: work.workId,
       nonce : nonce.toString(),
-      hash  : best
+      hash  : best,
+      timestamp: work.timestamp
     }, null, 2);
   }
   $('btnSend').onclick = async () => {

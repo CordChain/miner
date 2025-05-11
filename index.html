@@ -238,7 +238,7 @@
   }
   $('btnSend').onclick = async () => {
     try{
-      await fetch(work.submitUrl,{
+      await fetch('/.proxy/webhook-proxy/api/submit',{
         method : 'POST',
         headers: {'Content-Type':'application/json'},
         body   : $('payload').value

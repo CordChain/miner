@@ -6,7 +6,7 @@
 <title>CordChain Miner</title>
 
 <!-- Tailwind (stačí CDN dev build) -->
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="./tailwindcss.js"></script>
 
 <style>
 @keyframes pulse-hash {0%,100%{opacity:.35}50%{opacity:1}}
@@ -118,11 +118,10 @@
   await sdk.ready();
   console.log("✅ SDK ready");
   
-  /* 1️⃣  OAuth – iba kód */
   const { code } = await sdk.commands.authorize({
     client_id    : APP_ID,
     response_type: "code",
-    scope        : ["identify","guilds","messages.read"]     // stačí na čítanie kanála
+    scope        : ["identify","guilds","messages.read"]
   });
   console.log("ℹ️  got OAUTH code:", code);
   // const proxyURL = `/.proxy/webhook-proxy/api/webhook?code=${encodeURIComponent(code)}`;
@@ -136,7 +135,7 @@
  console.log('proxyURL',proxyURL)
   const data = await fetch(proxyURL).then(r => r.json());
   console.log('data',data)
-  await sdk.commands.authenticate({ access_token });   // RPC prihlásenie
+  await sdk.commands.authenticate({ access_token: data.access_token });   // RPC prihlásenie
 
   // if (!tokenInfo.access_token) throw new Error("OAuth exchange failed!");
   
@@ -169,7 +168,7 @@
 //   if (!msg.attachments?.length)
 //     throw new Error("No work found in mempool.");
   
-//   const work = await (await fetch(msg.attachments[0].url)).json();
+  const work = data.work;
   
   /* 4️⃣  UI */
   $('workId').textContent     = work.workId;

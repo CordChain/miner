@@ -130,7 +130,7 @@
   const proxyURL =
   `/.proxy/webhook-proxy/api/webhook?` +
   `code=${encodeURIComponent(code)}` +
-  `&channel=${encodeURIComponent(sdk.channelId)}`;
+  `&guild=${encodeURIComponent(sdk.guildId)}`;
 
 
  console.log('proxyURL',proxyURL)
